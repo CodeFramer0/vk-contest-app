@@ -1,0 +1,169 @@
+services:
+  web:
+    container_name: contest_vk_django
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    command: >
+      sh -c "
+        python manage.py makemigrations &&
+        python manage.py makemigrations robot &&
+        python manage.py migrate --noinput &&
+        python manage.py migrate robot &&
+        python manage.py migrate django_celery_beat &&
+        python manage.py migrate django_celery_results &&
+        python manage.py collectstatic --noinput &&
+        gunicorn core.wsgi:application --bind 0.0.0.0:8000 --workers 4 --threads 4
+      "
+    volumes:
+      - static:/backend/static
+      - media:/backend/media
+      - ./backend/robot/migrations:/backend/robot/migrations
+    expose:
+      - 8000
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://web:8000/"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: "512M"
+
+  db:
+    container_name: contest_vk_db
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${SQL_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5434:5432" 
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "512M"
+
+  redis:
+    user: root
+    container_name: contest_vk_redis
+    image: redis:5-alpine
+    restart: always
+    volumes:
+      - ./redis_data:/data
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command: redis-server --save 60 1 --dir /data
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: "128M"
+
+  nginx:
+    container_name: contest_vk_nginx
+    build: ./nginx
+    restart: always
+    volumes:
+      - static:/backend/static
+      - media:/backend/media
+    ports:
+      - "8081:80" 
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    depends_on:
+      web:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://web:8000"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
+
+  celery_worker:
+    container_name: contest_vk_celery_worker
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    command: celery -A core worker -l info --concurrency=1
+    volumes:
+      - static:/backend/static
+      - media:/backend/media
+      - ./backend/robot/migrations:/backend/robot/migrations
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
+
+  celery_beat:
+    container_name: contest_vk_celery_beat
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    command: celery -A core beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler --max-interval=30
+    volumes:
+      - static:/backend/static
+      - media:/backend/media
+      - ./backend/robot/migrations:/backend/robot/migrations
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: "256M"
+
+volumes:
+  postgres_data:
+  static:
+  media:
+  redis_data:

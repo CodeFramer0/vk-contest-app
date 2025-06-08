@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <title>{{ draw.title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #f6f8fa;
+        padding: 40px;
+        margin: 0;
+      }
+
+      .container {
+        max-width: 650px;
+        margin: auto;
+        background: #fff;
+        padding: 30px 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      }
+
+      h1 {
+        margin-top: 0;
+        font-size: 24px;
+        color: #333;
+      }
+
+      p {
+        font-size: 15px;
+        color: #555;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+
+      .btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 20px;
+        font-size: 15px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .btn:hover {
+        background-color: #218838;
+      }
+
+      .alert {
+        margin-bottom: 20px;
+        padding: 15px;
+        background: #fff3cd;
+        border: 1px solid #ffeeba;
+        border-radius: 8px;
+        color: #856404;
+      }
+
+      .winner-list {
+        margin-top: 20px;
+        background: #f1f1f1;
+        padding: 15px 20px;
+        border-radius: 8px;
+      }
+
+      .winner-list li {
+        margin-bottom: 6px;
+      }
+
+      .animation {
+        display: none;
+        font-size: 22px;
+        font-weight: bold;
+        text-align: center;
+        padding: 40px 0;
+        color: #444;
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.2;
+        }
+        50% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 0.2;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>{{ draw.title }}</h1>
+      <p><strong>Количество призовых мест:</strong> {{ draw.total_winners }}</p>
+      <p><strong>Создано:</strong> {{ draw.created_at|date:"d.m.Y H:i" }}</p>
+
+      {% if messages %}
+      <div class="alert">
+        {% for message in messages %}
+        <p>{{ message }}</p>
+        {% endfor %}
+      </div>
+      {% endif %} {% if draw.winners.exists %}
+      <div class="animation" id="animation">🎲 Выбираем победителей...</div>
+      <div class="winner-list" id="winners" style="display: none">
+        <h3>🎉 Победители:</h3>
+        <ul>
+          {% for ticket in draw.winners.all %}
+          <li>Билет №{{ ticket.number }} — {{ ticket.user.full_name }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <script>
+        document.addEventListener("DOMContentLoaded", function () {
+          const anim = document.getElementById("animation");
+          const winners = document.getElementById("winners");
+          anim.style.display = "block";
+          setTimeout(() => {
+            anim.style.display = "none";
+            winners.style.display = "block";
+          }, 5000);
+        });
+      </script>
+      {% else %}
+      <p>Победители ещё не выбраны.</p>
+      <form method="post" action="{% url 'run_draw' draw.pk %}">
+        {% csrf_token %}
+        <button class="btn" type="submit">Запустить розыгрыш</button>
+      </form>
+      {% endif %}
+    </div>
+  </body>
+</html>
