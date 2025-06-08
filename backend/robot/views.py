@@ -4,19 +4,20 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .models import Draw, Ticket
 
 from django.http import HttpResponse
-
+from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseForbidden
 
 def home_view(request):
     return HttpResponse(
         "<h1>VK Draw Bot</h1><p><a href='/admin/'>Перейти в админку</a></p>"
     )
 
-
+@login_required(login_url="/admin/login/")
 def draw_page(request, pk):
     draw = get_object_or_404(Draw, pk=pk)
     return render(request, "draw_page.html", {"draw": draw})
 
-
+@login_required(login_url="/admin/login/")
 def run_draw(request, pk):
     draw = get_object_or_404(Draw, pk=pk)
 
