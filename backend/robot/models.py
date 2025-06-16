@@ -11,7 +11,8 @@ class User(models.Model):
         verbose_name_plural = "Участники"
 
     def __str__(self):
-        return f"{self.full_name} (id={self.vk_id})"
+        return f"{self.full_name} ({self.vk_id})"
+   
 
 
 class Ticket(models.Model):

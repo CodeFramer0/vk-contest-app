@@ -9,13 +9,12 @@ class UserAdmin(admin.ModelAdmin):
     search_fields = ("vk_id", "full_name")
     ordering = ("-created_at",)
 
-
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
     list_display = ("number", "user", "issued_at")
     search_fields = ("number", "user__full_name", "user__vk_id")
     ordering = ("number",)
-
+    autocomplete_fields = ("user",)
 
 @admin.register(Draw)
 class DrawAdmin(admin.ModelAdmin):
