@@ -82,6 +82,15 @@
         color: #444;
         animation: pulse 1s infinite;
       }
+    
+    .winner-list a {
+    color: #0077ff;
+    text-decoration: none;
+  }
+
+  .winner-list a:hover {
+    text-decoration: underline;
+}
 
       @keyframes pulse {
         0% {
@@ -111,7 +120,7 @@
       {% endif %} {% if draw.winners.exists %}
       <div class="animation" id="animation">🎲 Выбираем победителей...</div>
 
-     <div class="winner-list" id="winners" style="display: none">
+   <div class="winner-list" id="winners" style="display: none">
   <h3>🎉 Победители:</h3>
   <ul>
     {% for ticket in draw.winners.all %}
@@ -125,7 +134,10 @@
         {% else %}
           🎁 Сертификат —
         {% endif %}
-        Билет №{{ ticket.number }} — {{ ticket.user.full_name }}
+        Билет №{{ ticket.number }} —
+        <a href="https://vk.com/id{{ ticket.user.vk_id }}" target="_blank">
+          {{ ticket.user.full_name }}
+        </a>
       </li>
     {% endfor %}
   </ul>
