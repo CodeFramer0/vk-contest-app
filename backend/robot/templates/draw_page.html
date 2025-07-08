@@ -110,6 +110,7 @@
       </div>
       {% endif %} {% if draw.winners.exists %}
       <div class="animation" id="animation">🎲 Выбираем победителей...</div>
+
       <div class="winner-list" id="winners" style="display: none">
         <h3>🎉 Победители:</h3>
         <ul>
@@ -123,6 +124,7 @@
           {% endfor %}
         </ul>
       </div>
+
       <script>
         document.addEventListener("DOMContentLoaded", function () {
           const anim = document.getElementById("animation");
